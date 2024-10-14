@@ -24,16 +24,19 @@ class Linear(Module):
 
     def forward(self, A):
         self.A = A   # (m x b)  Hint: make sure you understand what b stands for
-        return None  # Your code (n x b)
+        return np.matmul(self.W.T, A)  # Your code (n x b)
 
     def backward(self, dLdZ):  # dLdZ is (n x b), uses stored self.A
-        self.dLdW  = None  # Your code
-        self.dLdW0 = None  # Your code
-        return None        # Your code: return dLdA (m x b)
+        self.dLdW  = np.matmul(self.A, dLdZ.T)  # Your code
+        self.dLdW0 = np.matmul(np.ones([1, self.A.shape[1]]), dLdZ.T).T  # Your code
+        # note i am going ahead and summing across b (size of batch) here
+        return np.matmul(self.W, dLdZ)        # Your code: return dLdA (m x b)
 
     def sgd_step(self, lrate):  # Gradient descent step
-        self.W  = None  # Your code
-        self.W0 = None  # Your code
+
+        self.W  = self.W - self.dLdW * lrate  # Your code
+        
+        self.W0 = self.W0 - self.dLdW0 * lrate  # Your code
 
 
 # Activation modules
@@ -192,7 +195,7 @@ def unit_test(name, expected, actual):
         print("expected: " + str(expected))
         print("but was: " + str(actual))
 
-
+'''
 def sgd_test(nn, test_values):
     """Run one step of SGD on a simple dataset with the specified
     network, and with batch size (b) = len(dataset)
@@ -247,7 +250,7 @@ def sgd_test(nn, test_values):
     linear_2.sgd_step(lrate)
     unit_test('updated_linear_2.W', test_values['updated_linear_2.W'], linear_2.W)
     unit_test('updated_linear_2.W0', test_values['updated_linear_2.W0'], linear_2.W0)
-
+'''
 ######################################################################
 
 # TODO: Create your own unit tests
@@ -259,7 +262,7 @@ X, Y = super_simple_separable()  # data
 linear_1 = Linear(2, 3)  # module
 learning_rate = 0.005  #hyperparameter
 
-'''
+
 # test case:
 # forward
 z_1 = linear_1.forward(X)
@@ -267,9 +270,9 @@ exp_z_1 =  np.array([[10.41750064, 6.91122168, 20.73366505, 22.8912344],
                      [7.16872235, 3.48998746, 10.46996239, 9.9982611],
                      [-2.07105455, 0.69413716, 2.08241149, 4.84966811]])
 unit_test("linear_forward", exp_z_1, z_1)
-'''
 
-'''
+
+
 # backward
 dL_dz1 = np.array([[1.69467553e-09, -1.33530535e-06, 0.00000000e+00, -0.00000000e+00],
                                      [-5.24547376e-07, 5.82459519e-04, -3.84805202e-10, 1.47943038e-09],
@@ -278,9 +281,9 @@ exp_dLdX = np.array([[-2.40194628e-02, 1.77064845e-01, -1.27021626e-02, 7.740069
                                     [2.39827939e-02, -1.75870737e-01, 1.26832126e-02, -7.72828555e-05]])
 dLdX = linear_1.backward(dL_dz1)
 unit_test("linear_backward", exp_dLdX, dLdX)
-'''
 
-'''
+
+
 # sgd step
 linear_1.sgd_step(learning_rate)
 exp_linear_1_W = np.array([[1.2473734,  0.28294514,  0.68940437],
@@ -291,7 +294,7 @@ exp_linear_1_W0 = np.array([[6.66805339e-09],
                             [-2.90968033e-06],
                             [-1.01331631e-03]]),
 unit_test("linear_sgd_step_W0", exp_linear_1_W0, linear_1.W0)
-'''
+
 
 ######################################################################
 
@@ -319,31 +322,31 @@ disp.classify(X, Y, nn, it=100000)
 
 
 # TEST 4: try calling these methods that train with a simple dataset
-def nn_tanh_test():
-    np.random.seed(0)
-    nn = Sequential([Linear(2, 3), Tanh(), Linear(3, 2), SoftMax()], NLL())
-    X, Y = super_simple_separable()
-    nn.sgd(X, Y, iters=1, lrate=0.005)
-    return [np.vstack([nn.modules[0].W, nn.modules[0].W0.T]).tolist(),
-            np.vstack([nn.modules[2].W, nn.modules[2].W0.T]).tolist()]
+# def nn_tanh_test():
+#     np.random.seed(0)
+#     nn = Sequential([Linear(2, 3), Tanh(), Linear(3, 2), SoftMax()], NLL())
+#     X, Y = super_simple_separable()
+#     nn.sgd(X, Y, iters=1, lrate=0.005)
+#     return [np.vstack([nn.modules[0].W, nn.modules[0].W0.T]).tolist(),
+#             np.vstack([nn.modules[2].W, nn.modules[2].W0.T]).tolist()]
 
 
-def nn_relu_test():
-    np.random.seed(0)
-    nn = Sequential([Linear(2, 3), ReLU(), Linear(3, 2), SoftMax()], NLL())
-    X, Y = super_simple_separable()
-    nn.sgd(X, Y, iters=2, lrate=0.005)
-    return [np.vstack([nn.modules[0].W, nn.modules[0].W0.T]).tolist(),
-            np.vstack([nn.modules[2].W, nn.modules[2].W0.T]).tolist()]
+# def nn_relu_test():
+#     np.random.seed(0)
+#     nn = Sequential([Linear(2, 3), ReLU(), Linear(3, 2), SoftMax()], NLL())
+#     X, Y = super_simple_separable()
+#     nn.sgd(X, Y, iters=2, lrate=0.005)
+#     return [np.vstack([nn.modules[0].W, nn.modules[0].W0.T]).tolist(),
+#             np.vstack([nn.modules[2].W, nn.modules[2].W0.T]).tolist()]
 
 
-def nn_pred_test():
-    np.random.seed(0)
-    nn = Sequential([Linear(2, 3), ReLU(), Linear(3, 2), SoftMax()], NLL())
-    X, Y = super_simple_separable()
-    nn.sgd(X, Y, iters=1, lrate=0.005)
-    Ypred = nn.forward(X)
-    return nn.modules[-1].class_fun(Ypred).tolist(), [nn.loss.forward(Ypred, Y)]
+# def nn_pred_test():
+#     np.random.seed(0)
+#     nn = Sequential([Linear(2, 3), ReLU(), Linear(3, 2), SoftMax()], NLL())
+#     X, Y = super_simple_separable()
+#     nn.sgd(X, Y, iters=1, lrate=0.005)
+#     Ypred = nn.forward(X)
+#     return nn.modules[-1].class_fun(Ypred).tolist(), [nn.loss.forward(Ypred, Y)]
 
 
 '''
